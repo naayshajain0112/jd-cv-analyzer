@@ -1,0 +1,127 @@
+/* ===== Report Page ===== */
+
+/* Summary */
+.report__summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+  padding: var(--space-lg) var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.report__summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.report__summary-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.report__summary-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.report__summary-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--clr-border);
+}
+
+/* Candidates */
+.report__candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.report__candidate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.report__candidate-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.report__candidate-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.report__candidate-file {
+  font-size: 0.8rem;
+  color: var(--clr-text-dim);
+  margin-top: 2px;
+}
+
+.report__candidate-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* Skills */
+.report__skills-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.report__skills-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.chip--success {
+  border-color: rgba(52, 211, 153, .2);
+  background: rgba(52, 211, 153, .08);
+  color: var(--clr-success);
+}
+
+.chip--danger {
+  border-color: rgba(248, 113, 113, .2);
+  background: rgba(248, 113, 113, .08);
+  color: var(--clr-danger);
+}
+
+/* Progress */
+.report__progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.report__progress-label {
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  font-weight: 500;
+}
+
+/* Actions */
+.report__actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--clr-border);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .report__summary { flex-direction: column; gap: var(--space-md); }
+  .report__summary-divider { width: 40px; height: 1px; }
+  .report__candidate-header { flex-direction: column; align-items: center; text-align: center; }
+}
