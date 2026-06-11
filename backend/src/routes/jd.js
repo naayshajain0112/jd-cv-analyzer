@@ -1,12 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload');
-const { extractJD, approveJD, generateCriteria, getJD } = require('../controllers/jdController');
+const {
+  extractJD,
+  approveJD,
+  generateCriteria,
+  getJD,
+  getAllJDs,
+} = require('../controllers/jdController');
 
 // Extract JD from text or file
 router.post('/extract', upload.single('file'), extractJD);
 
-// Get JD by ID
+// Get all JDs
+router.get('/', getAllJDs);
 router.get('/:id', getJD);
 
 // Approve JD with optional edits

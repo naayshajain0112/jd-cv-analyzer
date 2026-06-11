@@ -2,7 +2,15 @@ const mongoose = require('mongoose');
 
 // ── Job Description Model ────────────────────────────────────────────────────
 const JDSchema = new mongoose.Schema({
-  rawText: { type: String, required: true },
+  title: {
+    type: String,
+    required: true,
+  },
+
+  rawText: {
+    type: String,
+    required: true,
+  },
   extracted: {
     jobTitle:            String,
     experience:          String,

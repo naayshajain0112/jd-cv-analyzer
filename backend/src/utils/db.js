@@ -7,8 +7,19 @@ async function connectDB() {
   if (isConnected) return;
 
   const uri = process.env.MONGODB_URI;
+
+  console.log('====================================');
+  console.log('MongoDB URI exists:', !!uri);
+
+  if (uri) {
+    console.log(
+      'MongoDB URI preview:',
+      uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@')
+    );
+  }
+
   if (!uri) {
-    logger.warn('MONGODB_URI not set — running without database persistence');
+    console.log('❌ MONGODB_URI is not set');
     return;
   }
 
@@ -16,12 +27,22 @@ async function connectDB() {
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 5000,
     });
+
     isConnected = true;
+    console.log('✅ MongoDB connected successfully');
     logger.info('MongoDB connected');
   } catch (err) {
-    logger.error('MongoDB connection failed:', err.message);
-    // Don't crash — app can still work, DB ops will fail gracefully
+    console.log('❌ MongoDB connection failed');
+    console.log('Error object:', err);
+    console.log('Error message:', err.message);
+    console.log('Error name:', err.name);
+
+    if (err.cause) {
+      console.log('Cause:', err.cause);
+    }
   }
+
+  console.log('====================================');
 }
 
 module.exports = { connectDB };

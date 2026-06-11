@@ -30,9 +30,14 @@ const extractJD = asyncHandler(async (req, res) => {
   logger.info(`Extracting JD requirements from ${rawText.length} chars`);
 
   const extracted = await callGemini(jdExtractionPrompt(rawText));
-
+  console.log('Job title:', extracted.jobTitle);
   // Persist to DB (unapproved)
-  const jdDoc = await JD.create({ rawText, extracted, approved: false });
+  const jdDoc = await JD.create({
+  title: extracted.jobTitle || 'Untitled JD',
+  rawText,
+  extracted,
+  approved: false,
+});
 
   res.json({
     success: true,
@@ -131,5 +136,20 @@ function normalizeWeights(skills, targetTotal) {
 
   return adjusted;
 }
+const getAllJDs = asyncHandler(async (req, res) => {
+  const jds = await JD.find()
+    .sort({ createdAt: -1 })
+    .select('_id title approved createdAt');
 
-module.exports = { extractJD, approveJD, generateCriteria, getJD };
+  res.json({
+    success: true,
+    jds,
+  });
+});
+module.exports = {
+  extractJD,
+  approveJD,
+  generateCriteria,
+  getJD,
+  getAllJDs,
+};
