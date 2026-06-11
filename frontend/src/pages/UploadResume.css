@@ -1,0 +1,73 @@
+/* ===== Upload Resume Page ===== */
+.upload-resume__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.dropzone__hint {
+  font-size: 0.75rem;
+  color: var(--clr-text-dim);
+  margin-top: var(--space-xs);
+}
+
+/* File list */
+.upload-resume__file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.upload-resume__file-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--clr-accent-light);
+}
+
+.upload-resume__files {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.upload-resume__file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.6rem 0.85rem;
+  background: rgba(0, 0, 0, .2);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast);
+}
+.upload-resume__file-item:hover {
+  border-color: var(--clr-border-hover);
+}
+
+.upload-resume__file-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.upload-resume__file-name {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload-resume__file-size {
+  font-size: 0.75rem;
+  color: var(--clr-text-dim);
+  flex-shrink: 0;
+}
+
+.upload-resume__actions {
+  display: flex;
+  justify-content: space-between;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--clr-border);
+}
