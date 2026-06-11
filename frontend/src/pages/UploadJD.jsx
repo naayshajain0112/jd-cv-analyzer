@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { extractJDText, extractJDFile } from '../api';
 import './UploadJD.css';
@@ -15,6 +15,45 @@ export default function UploadJD() {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
+  const [savedJDs, setSavedJDs]     = useState([]);
+  const [selectedJD, setSelectedJD] = useState('');
+  const [savedJDsLoading, setSavedJDsLoading] = useState(false);
+  const [savedJDsError, setSavedJDsError] = useState('');
+  const [selectedJDLoading, setSelectedJDLoading] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchSavedJDs = async () => {
+      setSavedJDsLoading(true);
+      setSavedJDsError('');
+
+      try {
+        const response = await fetch('http://localhost:5000/api/jd', {
+          signal: controller.signal,
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Failed to load saved JDs.');
+        }
+
+        setSavedJDs(Array.isArray(data.jds) ? data.jds : []);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setSavedJDsError(err.message || 'Failed to load saved JDs.');
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSavedJDsLoading(false);
+        }
+      }
+    };
+
+    fetchSavedJDs();
+
+    return () => controller.abort();
+  }, []);
 
   const prevent = (e) => { e.preventDefault(); e.stopPropagation(); };
   const handleDragIn  = (e) => { prevent(e); setIsDragging(true);  };
@@ -65,6 +104,35 @@ export default function UploadJD() {
       setError(err.message || 'Failed to analyze JD. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUseSelectedJD = async () => {
+    if (!selectedJD || selectedJDLoading) return;
+
+    setError('');
+    setSavedJDsError('');
+    setSelectedJDLoading(true);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/jd/${selectedJD}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success || !data.jd) {
+        throw new Error(data.error || 'Failed to load the selected JD.');
+      }
+
+      navigate('/review', {
+        state: {
+          jdId: data.jd._id,
+          extracted: data.jd.extracted,
+          rawText: data.jd.rawText,
+        },
+      });
+    } catch (err) {
+      setSavedJDsError(err.message || 'Failed to load the selected JD.');
+    } finally {
+      setSelectedJDLoading(false);
     }
   };
 
@@ -140,6 +208,35 @@ export default function UploadJD() {
         </div>
 
         <div className="glass-card upload-jd__card">
+          <div className="saved-jds">
+            <h3>📚 Previously Uploaded JDs</h3>
+            <div className="saved-jds__controls">
+              <select
+                className="form-select"
+                value={selectedJD}
+                onChange={(e) => setSelectedJD(e.target.value)}
+                disabled={savedJDsLoading || selectedJDLoading}
+              >
+                <option value="">
+                  {savedJDsLoading ? 'Loading saved JDs...' : 'Select a saved JD'}
+                </option>
+                {savedJDs.map((jd) => (
+                  <option key={jd._id} value={jd._id}>{jd.title}</option>
+                ))}
+              </select>
+              <button
+                className="btn btn-ghost"
+                disabled={!selectedJD || selectedJDLoading}
+                onClick={handleUseSelectedJD}
+              >
+                {selectedJDLoading ? 'Loading...' : 'Use Selected JD'}
+              </button>
+            </div>
+            {savedJDsError && (
+              <p className="saved-jds__error">{savedJDsError}</p>
+            )}
+          </div>
+
           <div className="upload-jd__tabs" role="tablist">
             <button
               id="tab-paste"

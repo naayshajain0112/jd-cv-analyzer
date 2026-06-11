@@ -5,6 +5,64 @@
   gap: var(--space-xl);
 }
 
+/* ---------- Previously uploaded JDs ---------- */
+.saved-jds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 1rem;
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+.saved-jds h3 {
+  margin: 0;
+  color: var(--clr-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.saved-jds__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.form-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, .22);
+  color: var(--clr-text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--dur-normal) var(--ease-out),
+              box-shadow var(--dur-normal) var(--ease-out);
+}
+
+.form-select:hover:not(:disabled),
+.form-select:focus {
+  border-color: rgba(99, 102, 241, .55);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .14);
+}
+
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.saved-jds__error {
+  margin: 0;
+  color: var(--clr-danger, #ef4444);
+  font-size: 0.85rem;
+}
+
 /* ---------- Tabs ---------- */
 .upload-jd__tabs {
   position: relative;
@@ -138,6 +196,10 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
+  .saved-jds__controls {
+    grid-template-columns: 1fr;
+  }
+
   .upload-jd__tab {
     font-size: 0.8rem;
     padding: 0.5rem 0.75rem;
