@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getAssessment, getJD, overrideAssessment, getReportPDFUrl } from '../api';
+import PageHeader from '../components/PageHeader';
 import './Report.css';
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -329,14 +330,16 @@ export default function Report() {
   return (
     <div className="page">
       <div className="container">
-        <div className="section-header">
-          <p className="section-header__badge">✦ Step 4</p>
-          <h1 className="section-header__title">Candidate Assessment Report</h1>
-          <p className="section-header__subtitle">
-            AI-powered analysis of <strong>{assessments.length} candidate{assessments.length > 1 ? 's' : ''}</strong>{' '}
-            {jd?.extracted?.jobTitle ? `for ${jd.extracted.jobTitle}` : 'against the job requirements'}.
-          </p>
-        </div>
+        <PageHeader
+          step="Step 4"
+          title="Candidate Assessment Report"
+          subtitle={(
+            <>
+              AI-powered analysis of <strong>{assessments.length} candidate{assessments.length > 1 ? 's' : ''}</strong>{' '}
+              {jd?.extracted?.jobTitle ? `for ${jd.extracted.jobTitle}` : 'against the job requirements'}.
+            </>
+          )}
+        />
 
         {/* Summary bar */}
         <div className="report__summary glass-card">

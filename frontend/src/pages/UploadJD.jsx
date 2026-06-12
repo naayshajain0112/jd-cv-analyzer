@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { extractJDText, extractJDFile } from '../api';
+import PageHeader from '../components/PageHeader';
 import './UploadJD.css';
 
 const MODES = { PASTE: 'paste', UPLOAD: 'upload' };
@@ -199,13 +200,11 @@ export default function UploadJD() {
   return (
     <div className="page">
       <div className="container">
-        <div className="section-header">
-          <p className="section-header__badge">✦ Step 1</p>
-          <h1 className="section-header__title">Upload Job Description</h1>
-          <p className="section-header__subtitle">
-            Provide the job description to begin AI-powered requirement extraction.
-          </p>
-        </div>
+        <PageHeader
+          step="Step 1"
+          title="Upload Job Description"
+          subtitle="Provide the job description to begin AI-powered requirement extraction."
+        />
 
         <div className="glass-card upload-jd__card">
           <div className="saved-jds">

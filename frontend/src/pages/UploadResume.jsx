@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { assessCandidates } from '../api';
+import PageHeader from '../components/PageHeader';
 import './UploadResume.css';
 
 export default function UploadResume() {
@@ -77,13 +78,11 @@ export default function UploadResume() {
   return (
     <div className="page">
       <div className="container">
-        <div className="section-header">
-          <p className="section-header__badge">✦ Step 3</p>
-          <h1 className="section-header__title">Upload Candidate Resumes</h1>
-          <p className="section-header__subtitle">
-            Upload one or more resumes to match against the job requirements.
-          </p>
-        </div>
+        <PageHeader
+          step="Step 3"
+          title="Upload Candidate Resumes"
+          subtitle="Upload one or more resumes to match against the job requirements."
+        />
 
         <div className="glass-card upload-resume__card">
           <div

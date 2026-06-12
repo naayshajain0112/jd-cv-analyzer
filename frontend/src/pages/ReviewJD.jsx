@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { approveJD, generateCriteria } from '../api';
+import PageHeader from '../components/PageHeader';
 import './ReviewJD.css';
 
 export default function ReviewJD() {
@@ -94,13 +95,11 @@ export default function ReviewJD() {
   return (
     <div className="page">
       <div className="container">
-        <div className="section-header">
-          <p className="section-header__badge">✦ Step 2</p>
-          <h1 className="section-header__title">Review Extracted Requirements</h1>
-          <p className="section-header__subtitle">
-            Verify and fine-tune the AI-extracted requirements before matching.
-          </p>
-        </div>
+        <PageHeader
+          step="Step 2"
+          title="Review Extracted Requirements"
+          subtitle="Verify and fine-tune the AI-extracted requirements before matching."
+        />
 
         {rawText && (
           <details className="glass-card review-jd__preview">
