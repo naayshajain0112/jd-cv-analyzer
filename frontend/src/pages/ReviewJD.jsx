@@ -3,7 +3,29 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { approveJD, generateCriteria } from '../api';
 import PageHeader from '../components/PageHeader';
 import './ReviewJD.css';
+const ChipList = ({ items, onRemove, color }) => (
+    <div className="chip-list">
+      {items.map((item) => (
+        <span className={`chip ${color || ''}`} key={item}>
+          {item}
+          <button className="chip__remove" onClick={() => onRemove(item)} aria-label={`Remove ${item}`}>×</button>
+        </span>
+      ))}
+    </div>
+  );
 
+  const AddRow = ({ value, onChange, onAdd, onKeyDown, placeholder }) => (
+    <div className="review-jd__add-skill">
+      <input
+        className="form-input"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onAdd(); } }}
+      />
+      <button className="btn btn-secondary" onClick={onAdd}>+ Add</button>
+    </div>
+  );
 export default function ReviewJD() {
   const navigate  = useNavigate();
   const { state } = useLocation();
@@ -68,29 +90,7 @@ export default function ReviewJD() {
     }
   };
 
-  const ChipList = ({ items, onRemove, color }) => (
-    <div className="chip-list">
-      {items.map((item) => (
-        <span className={`chip ${color || ''}`} key={item}>
-          {item}
-          <button className="chip__remove" onClick={() => onRemove(item)} aria-label={`Remove ${item}`}>×</button>
-        </span>
-      ))}
-    </div>
-  );
-
-  const AddRow = ({ value, onChange, onAdd, onKeyDown, placeholder }) => (
-    <div className="review-jd__add-skill">
-      <input
-        className="form-input"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onAdd(); } }}
-      />
-      <button className="btn btn-secondary" onClick={onAdd}>+ Add</button>
-    </div>
-  );
+  
 
   return (
     <div className="page">
