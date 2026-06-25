@@ -49,6 +49,13 @@ function RatingBar({ rating, max = 5 }) {
   );
 }
 
+function sanitizeFilename(value) {
+  return String(value || 'Candidate')
+    .replace(/[^a-z0-9]+/gi, '_')
+    .replace(/^_+|_+$/g, '')
+    || 'Candidate';
+}
+
 /* ── Override Modal ─────────────────────────────────────────────────────── */
 function OverrideModal({ assessment, onSave, onClose }) {
   const current = assessment.recruiterOverride || {};
@@ -116,6 +123,25 @@ function CandidateCard({ assessment, jd, onOverrideSaved }) {
       setShowModal(false);
     } catch (e) {
       alert('Failed to save override: ' + e.message);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const res = await fetch(getReportPDFUrl(assessment._id));
+      if (!res.ok) throw new Error(`PDF download failed (${res.status})`);
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${sanitizeFilename(assessment.candidateName)}_Assessment_Report.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(e.message || 'Failed to download PDF.');
     }
   };
 
@@ -234,14 +260,9 @@ function CandidateCard({ assessment, jd, onOverrideSaved }) {
       {/* Actions */}
       <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
         <button className="btn btn-secondary btn--sm" onClick={() => setShowModal(true)}>✏️ Override</button>
-        <a
-          href={getReportPDFUrl(assessment._id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-ghost btn--sm"
-        >
+        <button className="btn btn-ghost btn--sm" onClick={handleDownloadPDF}>
           📄 Download PDF
-        </a>
+        </button>
       </div>
 
       {showModal && (

@@ -136,6 +136,39 @@ export default function UploadJD() {
       setSelectedJDLoading(false);
     }
   };
+  const handleDeleteJD = async () => {
+  if (!selectedJD) return;
+
+  const confirmDelete = window.confirm(
+    'Are you sure you want to delete this JD?'
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/jd/${selectedJD}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Failed to delete JD');
+    }
+
+    setSavedJDs(prev =>
+      prev.filter(jd => jd._id !== selectedJD)
+    );
+
+    setSelectedJD('');
+
+  } catch (err) {
+    alert(err.message);
+  }
+};
 
   const renderPasteMode = () => (
     <div className="upload-jd__panel" key="paste">
@@ -223,6 +256,13 @@ export default function UploadJD() {
                   <option key={jd._id} value={jd._id}>{jd.title}</option>
                 ))}
               </select>
+              <button
+    className="btn btn-danger"
+    disabled={!selectedJD}
+    onClick={handleDeleteJD}
+  >
+    🗑️ Delete
+  </button>
               <button
                 className="btn btn-ghost"
                 disabled={!selectedJD || selectedJDLoading}
