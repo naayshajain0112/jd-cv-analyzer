@@ -29,7 +29,7 @@ async function generateReportPDF(assessment, jd) {
     const doc = new PDFDocument({
       margin: PAGE.margin,
       size: 'A4',
-      bufferPages: true,
+      bufferPages: false,
       autoFirstPage: true,
       info: {
         Title: `CV Assessment Report - ${resolveCandidateName(assessment)}`,
@@ -99,7 +99,7 @@ async function generateReportPDF(assessment, jd) {
     sectionHeader(doc, 'Final Recommendation');
     recommendationBox(doc, finalVerdict, finalScore, finalColor, override.notes);
 
-    addFooters(doc);
+    //addFooters(doc);
     doc.end();
   });
 }
@@ -203,10 +203,11 @@ function drawSummaryNarrative(doc, assessment, jd, score, verdict) {
 }
 
 function sectionHeader(doc, title) {
+  ensureSpace(doc, 80);
   doc.x = PAGE.margin;
   ensureSpace(doc, 38);
   doc.x = PAGE.margin;
-  doc.moveDown(0.4);
+  
   doc.fillColor(colors.primary).font('Helvetica-Bold').fontSize(12)
     .text(title, PAGE.margin, doc.y, { width: contentWidth(doc) });
   const y = doc.y + 5;
@@ -475,21 +476,34 @@ function bulletList(doc, items) {
 
 function ensureSpace(doc, neededHeight) {
   if (doc.y + neededHeight > pageBottom(doc)) {
+    console.log('NEW PAGE');
+
     doc.addPage();
+
+    // Force cursor to top of new page
+    doc.x = PAGE.margin;
+    doc.y = PAGE.top;
   }
 }
 
 function addFooters(doc) {
   const range = doc.bufferedPageRange();
-  for (let i = 0; i < range.count; i += 1) {
-    doc.switchToPage(range.start + i);
-    doc.fillColor(colors.muted).font('Helvetica').fontSize(8)
-      .text(
-        `CVMatch Assessment Platform | Page ${i + 1} of ${range.count} | Confidential`,
-        PAGE.margin,
-        doc.page.height - 38,
-        { align: 'center', width: contentWidth(doc), lineBreak: false }
-      );
+
+  for (let i = 0; i < range.count; i++) {
+    doc.switchToPage(i);
+
+    doc.fontSize(8);
+    doc.fillColor(colors.muted);
+
+    doc.text(
+      `Page ${i + 1} of ${range.count}`,
+      PAGE.margin,
+      doc.page.height - 40,
+      {
+        width: contentWidth(doc),
+        align: 'center'
+      }
+    );
   }
 }
 
