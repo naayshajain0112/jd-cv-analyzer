@@ -1,4 +1,4 @@
-const { generateReportPDF } = require('../services/pdfService');
+const { generateReportPDF, resolveCandidateName } = require('../services/pdfService');
 const { Assessment, JD } = require('../models');
 const { asyncHandler, createError } = require('../middleware/errorHandler');
 
@@ -15,7 +15,7 @@ const downloadPDF = asyncHandler(async (req, res) => {
 
   const pdfBuffer = await generateReportPDF(assessment, jd);
 
-  const filename = `CVMatch_Report_${(assessment.candidateName || 'Candidate').replace(/\s+/g, '_')}.pdf`;
+  const filename = `${sanitizeFilename(resolveCandidateName(assessment))}_Assessment_Report.pdf`;
 
   res.set({
     'Content-Type': 'application/pdf',
@@ -25,5 +25,12 @@ const downloadPDF = asyncHandler(async (req, res) => {
 
   res.send(pdfBuffer);
 });
+
+function sanitizeFilename(value) {
+  return String(value || 'Candidate')
+    .replace(/[^a-z0-9]+/gi, '_')
+    .replace(/^_+|_+$/g, '')
+    || 'Candidate';
+}
 
 module.exports = { downloadPDF };

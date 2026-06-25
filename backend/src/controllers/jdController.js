@@ -146,10 +146,23 @@ const getAllJDs = asyncHandler(async (req, res) => {
     jds,
   });
 });
+const deleteJD = asyncHandler(async (req, res) => {
+  const jd = await JD.findByIdAndDelete(req.params.id);
+
+  if (!jd) {
+    throw createError('JD not found.', 404);
+  }
+
+  res.json({
+    success: true,
+    message: 'JD deleted successfully',
+  });
+});
 module.exports = {
   extractJD,
   approveJD,
   generateCriteria,
   getJD,
   getAllJDs,
+  deleteJD,
 };

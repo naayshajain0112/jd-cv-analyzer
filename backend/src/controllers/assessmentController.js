@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { extractText } = require('../services/extractionService');
 const { callGemini } = require('../services/geminiService');
+const { resolveCandidateName, extractResumeNameFromText, extractLinkedInNameFromText } = require('../services/pdfService');
 const { cvAssessmentPrompt, interviewQuestionsPrompt } = require('../prompts/cvPrompts');
 const { calculateScore, runEligibilityChecks, identifyGaps } = require('../services/scoringService');
 const { JD, Assessment } = require('../models');
@@ -60,10 +61,20 @@ const assessCandidates = asyncHandler(async (req, res) => {
       const iqResult = await callGemini(
         interviewQuestionsPrompt(jd.extracted, gaps, weak)
       );
+      const resumeName = meaningfulName(aiResult.resumeName) || extractResumeNameFromText(cvText);
+      const linkedinName = meaningfulName(aiResult.linkedinName) || extractLinkedInNameFromText(cvText);
+      const candidateName = resolveCandidateName({
+        candidateName: aiResult.candidateName,
+        resumeName,
+        linkedinName,
+        resumeText: cvText,
+      });
 
       const assessment = await Assessment.create({
         jdId,
-        candidateName: aiResult.candidateName || file.originalname,
+        candidateName,
+        resumeName,
+        linkedinName,
         resumeFileName: file.originalname,
         resumeText: cvText.substring(0, 5000),
         hardSkillRatings: hardRatings,
@@ -142,6 +153,13 @@ function mergeWeights(ratings, criteria) {
       importance: criteriaItem?.importance || 'important',
     };
   });
+}
+
+function meaningfulName(value) {
+  if (!value) return '';
+  const cleaned = String(value).replace(/\s+/g, ' ').trim();
+  if (!cleaned || /^unknown$/i.test(cleaned) || /^n\/a$/i.test(cleaned) || cleaned === '-') return '';
+  return cleaned;
 }
 
 module.exports = { assessCandidates, getAssessment, getAssessmentsByJD, overrideAssessment };

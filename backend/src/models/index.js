@@ -44,6 +44,8 @@ const JDSchema = new mongoose.Schema({
 const AssessmentSchema = new mongoose.Schema({
   jdId:           { type: mongoose.Schema.Types.ObjectId, ref: 'JD', required: true },
   candidateName:  String,
+  resumeName:     String,
+  linkedinName:   String,
   resumeFileName: String,
   resumeText:     String,
   hardSkillRatings: [{

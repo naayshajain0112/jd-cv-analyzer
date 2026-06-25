@@ -21,7 +21,9 @@ Rating scale:
 
 JSON schema:
 {
-  "candidateName": "string (extract from CV, or 'Unknown')",
+  "resumeName": "string (candidate name from resume header/contact area, or empty string if missing)",
+  "linkedinName": "string (candidate name inferred from LinkedIn profile URL or LinkedIn text, or empty string if missing)",
+  "candidateName": "string (best candidate display name using resumeName first, then linkedinName, then empty string if missing)",
   "hardSkillRatings": [
     {
       "skill": "string",
