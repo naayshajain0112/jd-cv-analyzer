@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+const API_URL = import.meta.env.VITE_API_URL;
 import { useNavigate } from 'react-router-dom';
 import { extractJDText, extractJDFile } from '../api';
 import PageHeader from '../components/PageHeader';
@@ -30,7 +31,7 @@ export default function UploadJD() {
       setSavedJDsError('');
 
       try {
-        const response = await fetch('http://localhost:5000/api/jd', {
+        const response = await fetch('${API_URL}/api/jd', {
           signal: controller.signal,
         });
         const data = await response.json().catch(() => ({}));
@@ -116,7 +117,7 @@ export default function UploadJD() {
     setSelectedJDLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/jd/${selectedJD}`);
+      const response = await fetch(`${API_URL}/api/jd/${selectedJD}`);
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok || !data.success || !data.jd) {
@@ -147,7 +148,7 @@ export default function UploadJD() {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/jd/${selectedJD}`,
+      `${API_URL}/api/jd/${selectedJD}`,
       {
         method: 'DELETE',
       }
