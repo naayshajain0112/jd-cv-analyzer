@@ -80,7 +80,7 @@ function runEligibilityChecks(eligibilityChecks, approvedJD) {
 
   if (!experienceMet) {
     failureReasons.push(
-      `Insufficient experience. Required: ${approvedJD.experience || 'Not specified'}. Found: ${eligibilityChecks.experienceYears || 'Not mentioned'}`
+      `Insufficient experience. Required: ${formatExperienceRequirement(approvedJD.experience)}. Found: ${eligibilityChecks.experienceYears || 'Not mentioned'}`
     );
   }
 
@@ -122,6 +122,16 @@ function runEligibilityChecks(eligibilityChecks, approvedJD) {
     overallEligible,
     details: eligibilityChecks,
   };
+}
+
+function formatExperienceRequirement(experience) {
+  if (!experience) return 'Not specified';
+  if (typeof experience === 'string') return experience;
+
+  const minimum = Number(experience.minimum);
+  if (Number.isFinite(minimum)) return `${minimum}+ years`;
+
+  return 'Not specified';
 }
 
 /**

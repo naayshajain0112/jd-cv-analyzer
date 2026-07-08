@@ -13,11 +13,20 @@ const JDSchema = new mongoose.Schema({
   },
   extracted: {
     jobTitle:            String,
-    experience:          String,
+    experience: {
+      minimum: Number,
+      allowHigherExperience: { type: Boolean, default: true },
+    },
     education:           String,
     location:            String,
     workingModel:        String,
     hardSkills:          [String],
+    skillGroups: [{
+      id:        String,
+      groupName: String,
+      skills:    [String],
+      rule:      { type: String, enum: ['ALL', 'ANY_ONE'], default: 'ALL' },
+    }],
     softSkills:          [String],
     mandatoryRequirements: [String],
     rejectConditions:    [String],

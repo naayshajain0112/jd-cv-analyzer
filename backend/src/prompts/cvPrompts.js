@@ -11,6 +11,9 @@ STRICT RULES:
 3. If a skill is not mentioned at all, rate it 1 and state "Not mentioned in CV".
 4. Do NOT invent evidence. Do NOT assume skills the candidate has not demonstrated.
 5. Return ONLY valid JSON — no markdown fences, no explanation.
+6. The JD experience requirement may be stored as { "minimum": number, "allowHigherExperience": true }.
+7. A candidate satisfies the experience requirement when their experience is greater than or equal to the minimum.
+8. Never reject a candidate for having more experience than the minimum.
 
 Rating scale:
 1 = Not present / Not mentioned

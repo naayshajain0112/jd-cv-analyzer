@@ -7,6 +7,40 @@ const { JD } = require('../models');
 const { asyncHandler, createError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
+function normalizeExtractedJD(extracted = {}) {
+  const minimum = parseExperienceMinimum(extracted.experience);
+
+  return {
+    ...extracted,
+    experience: {
+      minimum,
+      allowHigherExperience: true,
+    },
+    hardSkills: Array.isArray(extracted.hardSkills) ? extracted.hardSkills : [],
+    skillGroups: Array.isArray(extracted.skillGroups)
+      ? extracted.skillGroups.map((group, index) => ({
+        id: group?.id || `skill-group-${index + 1}`,
+        groupName: group?.groupName || '',
+        skills: Array.isArray(group?.skills) ? [...new Set(group.skills.filter(Boolean))] : [],
+        rule: group?.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
+      }))
+      : [],
+    softSkills: Array.isArray(extracted.softSkills) ? extracted.softSkills : [],
+    mandatoryRequirements: Array.isArray(extracted.mandatoryRequirements) ? extracted.mandatoryRequirements : [],
+    rejectConditions: Array.isArray(extracted.rejectConditions) ? extracted.rejectConditions : [],
+  };
+}
+
+function parseExperienceMinimum(experience) {
+  if (experience && typeof experience === 'object') {
+    const minimum = Number(experience.minimum);
+    return Number.isFinite(minimum) ? minimum : 0;
+  }
+
+  const match = String(experience || '').match(/(\d+(?:\.\d+)?)/);
+  return match ? Number(match[1]) : 0;
+}
+
 /**
  * POST /api/jd/extract
  * Upload or paste JD text, extract structured requirements via Gemini.
@@ -29,7 +63,7 @@ const extractJD = asyncHandler(async (req, res) => {
 
   logger.info(`Extracting JD requirements from ${rawText.length} chars`);
 
-  const extracted = await callGemini(jdExtractionPrompt(rawText));
+  const extracted = normalizeExtractedJD(await callGemini(jdExtractionPrompt(rawText)));
   console.log('Job title:', extracted.jobTitle);
   // Persist to DB (unapproved)
   const jdDoc = await JD.create({
@@ -57,9 +91,11 @@ const approveJD = asyncHandler(async (req, res) => {
 
   if (!extracted) throw createError('Extracted JD data is required.', 400);
 
+  const normalizedExtracted = normalizeExtractedJD(extracted);
+
   const jd = await JD.findByIdAndUpdate(
     id,
-    { extracted, approved: true },
+    { extracted: normalizedExtracted, approved: true },
     { new: true }
   );
 

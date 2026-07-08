@@ -3,6 +3,35 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { approveJD, generateCriteria } from '../api';
 import PageHeader from '../components/PageHeader';
 import './ReviewJD.css';
+
+const parseExperienceMinimum = (experience) => {
+  if (experience && typeof experience === 'object') {
+    const minimum = Number(experience.minimum);
+    return Number.isFinite(minimum) ? String(minimum) : '';
+  }
+
+  const match = String(experience || '').match(/(\d+(?:\.\d+)?)/);
+  return match ? match[1] : '';
+};
+
+const createSkillGroup = () => ({
+  id: `skill-group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  groupName: '',
+  skills: [],
+  rule: 'ALL',
+});
+
+const normalizeSkillGroups = (groups) => {
+  if (!Array.isArray(groups)) return [];
+
+  return groups.map((group, index) => ({
+    id: group?.id || `skill-group-${index + 1}-${Math.random().toString(36).slice(2, 7)}`,
+    groupName: group?.groupName || '',
+    skills: Array.isArray(group?.skills) ? [...new Set(group.skills.filter(Boolean))] : [],
+    rule: group?.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
+  }));
+};
+
 const ChipList = ({ items, onRemove, color }) => (
     <div className="chip-list">
       {items.map((item) => (
@@ -34,20 +63,22 @@ export default function ReviewJD() {
 
   const initial = state?.extracted || {};
 
-  const [jobTitle, setJobTitle]           = useState(initial.jobTitle || '');
-  const [experience, setExperience]       = useState(initial.experience || '');
-  const [education, setEducation]         = useState(initial.education || '');
-  const [location, setLocation]           = useState(initial.location || '');
-  const [workingModel, setWorkingModel]   = useState(initial.workingModel || '');
-  const [hardSkills, setHardSkills]       = useState(initial.hardSkills || []);
-  const [softSkills, setSoftSkills]       = useState(initial.softSkills || []);
-  const [mandatory, setMandatory]         = useState(initial.mandatoryRequirements || []);
-  const [rejectConds, setRejectConds]     = useState(initial.rejectConditions || []);
+  const [jobTitle, setJobTitle]             = useState(initial.jobTitle || '');
+  const [experienceMinimum, setExperienceMinimum] = useState(parseExperienceMinimum(initial.experience));
+  const [education, setEducation]           = useState(initial.education || '');
+  const [location, setLocation]             = useState(initial.location || '');
+  const [workingModel, setWorkingModel]     = useState(initial.workingModel || '');
+  const [hardSkills, setHardSkills]         = useState(initial.hardSkills || []);
+  const [skillGroups, setSkillGroups]       = useState(normalizeSkillGroups(initial.skillGroups));
+  const [softSkills, setSoftSkills]         = useState(initial.softSkills || []);
+  const [mandatory, setMandatory]           = useState(initial.mandatoryRequirements || []);
+  const [rejectConds, setRejectConds]       = useState(initial.rejectConditions || []);
 
   const [newHard, setNewHard] = useState('');
   const [newSoft, setNewSoft] = useState('');
   const [newMandatory, setNewMandatory] = useState('');
   const [newReject, setNewReject] = useState('');
+  const [newGroupSkills, setNewGroupSkills] = useState({});
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
@@ -68,20 +99,79 @@ export default function ReviewJD() {
   };
   const removeFromList = (list, setList, item) => setList(list.filter((x) => x !== item));
 
+  const addSkillGroup = () => {
+    const group = createSkillGroup();
+    setSkillGroups((prev) => [...prev, group]);
+    setNewGroupSkills((prev) => ({ ...prev, [group.id]: '' }));
+  };
+
+  const updateSkillGroup = (groupId, updates) => {
+    setSkillGroups((prev) => prev.map((group) => (group.id === groupId ? { ...group, ...updates } : group)));
+  };
+
+  const removeSkillGroup = (groupId) => {
+    setSkillGroups((prev) => prev.filter((group) => group.id !== groupId));
+    setNewGroupSkills((prev) => {
+      const next = { ...prev };
+      delete next[groupId];
+      return next;
+    });
+  };
+
+  const addSkillToGroup = (groupId) => {
+    const selectedSkill = (newGroupSkills[groupId] || '').trim();
+    if (!selectedSkill) return;
+
+    setSkillGroups((prev) => prev.map((group) => {
+      if (group.id !== groupId || group.skills.includes(selectedSkill)) return group;
+      return { ...group, skills: [...group.skills, selectedSkill] };
+    }));
+
+    setNewGroupSkills((prev) => ({ ...prev, [groupId]: '' }));
+  };
+
+  const removeSkillFromGroup = (groupId, skill) => {
+    setSkillGroups((prev) => prev.map((group) => {
+      if (group.id !== groupId) return group;
+      return { ...group, skills: group.skills.filter((item) => item !== skill) };
+    }));
+  };
+
+  const buildExperience = () => ({
+    minimum: Number(experienceMinimum) || 0,
+    allowHigherExperience: true,
+  });
+
+  const buildSkillGroups = () => skillGroups
+    .map((group) => ({
+      ...group,
+      groupName: group.groupName.trim(),
+      skills: group.skills.filter(Boolean),
+      rule: group.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
+    }))
+    .filter((group) => group.groupName || group.skills.length > 0);
+
   const handleContinue = async () => {
     setError('');
     setLoading(true);
     try {
-      const extracted = {
-        jobTitle, experience, education, location, workingModel,
-        hardSkills, softSkills,
+      const normalizedExtracted = {
+        jobTitle,
+        education,
+        location,
+        workingModel,
+        hardSkills,
+        softSkills,
         mandatoryRequirements: mandatory,
         rejectConditions: rejectConds,
+        experience: buildExperience(),
+        skillGroups: buildSkillGroups(),
       };
-      await approveJD(jdId, extracted);
+
+      await approveJD(jdId, normalizedExtracted);
       const criteriaResult = await generateCriteria(jdId);
       navigate('/upload-resume', {
-        state: { jdId, extracted, criteria: criteriaResult.criteria },
+        state: { jdId, extracted: normalizedExtracted, criteria: criteriaResult.criteria },
       });
     } catch (err) {
       setError(err.message || 'Failed to save JD. Please try again.');
@@ -119,9 +209,19 @@ export default function ReviewJD() {
 
           {/* Experience */}
           <div className="review-jd__section">
-            <h2 className="review-jd__section-title">📅 Experience Required</h2>
+            <h2 className="review-jd__section-title">📅 Minimum Experience Required (Years)</h2>
             <div className="form-group">
-              <input id="experience-input" className="form-input" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 3+ years" />
+              <input
+                id="experience-input"
+                className="form-input"
+                type="number"
+                min="0"
+                step="0.5"
+                value={experienceMinimum}
+                onChange={(e) => setExperienceMinimum(e.target.value)}
+                placeholder="e.g. 3"
+              />
+              <p className="review-jd__helper-text">Higher experience is accepted automatically.</p>
             </div>
           </div>
 
@@ -153,6 +253,75 @@ export default function ReviewJD() {
             <ChipList items={hardSkills} onRemove={(s) => removeFromList(hardSkills, setHardSkills, s)} />
             <AddRow value={newHard} onChange={setNewHard} placeholder="Add a technical skill…"
               onAdd={() => addToList(hardSkills, setHardSkills, newHard, setNewHard)} />
+          </div>
+
+          {/* Skill Groups */}
+          <div className="review-jd__section">
+            <div className="review-jd__section-header">
+              <h2 className="review-jd__section-title">🧩 Skill Groups (Optional)</h2>
+              <button className="btn btn-secondary" onClick={addSkillGroup}>+ Add Skill Group</button>
+            </div>
+            <p className="review-jd__helper-text">Use skill groups when a candidate only needs one of several equivalent skills.</p>
+
+            {skillGroups.length === 0 ? (
+              <p className="review-jd__empty-state">No skill groups added yet.</p>
+            ) : skillGroups.map((group) => (
+              <div className="review-jd__skill-group" key={group.id}>
+                <div className="review-jd__skill-group-top">
+                  <input
+                    className="form-input"
+                    value={group.groupName}
+                    onChange={(e) => updateSkillGroup(group.id, { groupName: e.target.value })}
+                    placeholder="Frontend Framework"
+                  />
+                  <button className="btn btn-ghost" onClick={() => removeSkillGroup(group.id)}>Remove Group</button>
+                </div>
+
+                <div className="review-jd__skill-group-rule">
+                  <label className="review-jd__radio-option">
+                    <input
+                      type="radio"
+                      name={`skill-group-rule-${group.id}`}
+                      checked={group.rule === 'ALL'}
+                      onChange={() => updateSkillGroup(group.id, { rule: 'ALL' })}
+                    />
+                    <span>ALL skills required</span>
+                  </label>
+                  <label className="review-jd__radio-option">
+                    <input
+                      type="radio"
+                      name={`skill-group-rule-${group.id}`}
+                      checked={group.rule === 'ANY_ONE'}
+                      onChange={() => updateSkillGroup(group.id, { rule: 'ANY_ONE' })}
+                    />
+                    <span>ANY ONE skill required</span>
+                  </label>
+                </div>
+
+                <div className="review-jd__skill-group-add">
+                  <select
+                    className="form-input"
+                    value={newGroupSkills[group.id] || ''}
+                    onChange={(e) => setNewGroupSkills((prev) => ({ ...prev, [group.id]: e.target.value }))}
+                    disabled={hardSkills.length === 0}
+                  >
+                    <option value="">{hardSkills.length > 0 ? 'Add an existing hard skill' : 'Add hard skills first'}</option>
+                    {hardSkills.map((skill) => (
+                      <option key={skill} value={skill}>{skill}</option>
+                    ))}
+                  </select>
+                  <button className="btn btn-secondary" onClick={() => addSkillToGroup(group.id)} disabled={hardSkills.length === 0}>
+                    + Add
+                  </button>
+                </div>
+
+                <ChipList
+                  items={group.skills}
+                  onRemove={(skill) => removeSkillFromGroup(group.id, skill)}
+                  color="chip--accent"
+                />
+              </div>
+            ))}
           </div>
 
           {/* Soft Skills */}

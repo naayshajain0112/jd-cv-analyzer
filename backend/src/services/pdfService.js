@@ -270,7 +270,7 @@ function roleComparisonTable(doc, assessment, jd) {
   const details = eligibility.details || {};
   const extracted = jd?.extracted || {};
   const rows = [
-    ['Experience', cleanText(extracted.experience) || 'Not specified', cleanText(details.experienceYears) || boolLabel(eligibility.experienceMet), statusLabel(eligibility.experienceMet)],
+    ['Experience', formatExperienceRequirement(extracted.experience), cleanText(details.experienceYears) || boolLabel(eligibility.experienceMet), statusLabel(eligibility.experienceMet)],
     ['Education', cleanText(extracted.education) || 'Not specified', cleanText(details.educationFound) || boolLabel(eligibility.educationMet), statusLabel(eligibility.educationMet)],
     ['Location', cleanText(extracted.location) || 'Not specified', cleanText(details.locationFound) || boolLabel(eligibility.locationMet), statusLabel(eligibility.locationMet)],
     ['Mandatory Requirements', listText(extracted.mandatoryRequirements), requirementsEvidence(details.mandatoryCheckResults), statusLabel(eligibility.mandatoryMet)],
@@ -278,6 +278,16 @@ function roleComparisonTable(doc, assessment, jd) {
   ];
 
   table(doc, ['Area', 'Job Requirement', 'Candidate Evidence', 'Status'], rows, [0.18, 0.32, 0.34, 0.16]);
+}
+
+function formatExperienceRequirement(experience) {
+  if (!experience) return 'Not specified';
+  if (typeof experience === 'string') return cleanText(experience) || 'Not specified';
+
+  const minimum = Number(experience.minimum);
+  if (Number.isFinite(minimum)) return `${minimum}+ years`;
+
+  return 'Not specified';
 }
 
 function eligibilityTable(doc, eligibility = {}) {
