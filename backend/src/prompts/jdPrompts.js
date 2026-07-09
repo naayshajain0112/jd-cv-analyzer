@@ -14,11 +14,26 @@ JSON schema to follow exactly:
   "location": "string (city/country or 'Remote' or 'Hybrid')",
   "workingModel": "string (Remote | Hybrid | On-site)",
   "hardSkills": ["array of technical skills, tools, programming languages, frameworks"],
+  "skillGroups": [
+    {
+      "groupName": "string",
+      "skills": ["string"],
+      "rule": "ANY_ONE | ALL"
+    }
+  ],
   "softSkills": ["array of interpersonal/behavioral skills"],
   "mandatoryRequirements": ["list of must-have requirements"],
   "rejectConditions": ["list of conditions that would automatically disqualify a candidate"],
   "responsibilities": ["key job responsibilities, max 8"]
 }
+
+Extraction rules:
+- Always extract distinct hard skills, even when they also belong to a skill group.
+- Detect equivalent or alternative skills mentioned together in the JD and place them in skillGroups.
+- Infer rule = ANY_ONE when the JD uses OR, /, "either", "one of", or equivalent alternatives.
+- Infer rule = ALL when the JD uses AND, "with", "plus", or a combination that clearly requires all skills.
+- If no grouping exists, return an empty skillGroups array.
+- Every skill in skillGroups must also appear in hardSkills.
 
 Job Description:
 """

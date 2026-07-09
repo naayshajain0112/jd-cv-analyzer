@@ -32,16 +32,21 @@ function calcCategoryScore(ratings, totalWeight) {
 /**
  * Calculate the final weighted score combining hard and soft skills.
  * Hard skills = 70% of total, soft skills = 30% of total.
+ * Skill groups are folded into the hard-skill score before remaining hard skills are scored individually.
  *
  * @param {Array} hardRatings - Hard skill ratings with weights
  * @param {Array} softRatings - Soft skill ratings with weights
+ * @param {object} approvedJD - Approved JD containing skillGroups
  * @returns {{ hardSkillScore, softSkillScore, weightedScore, classification }}
  */
-function calculateScore(hardRatings, softRatings) {
-  const hardTotalWeight = hardRatings.reduce((s, r) => s + (Number(r.weight) || 0), 0) || 70;
+function calculateScore(hardRatings, softRatings, approvedJD = {}, assessmentCriteria = {}) {
   const softTotalWeight = softRatings.reduce((s, r) => s + (Number(r.weight) || 0), 0) || 30;
 
-  const hardScore = calcCategoryScore(hardRatings, hardTotalWeight);
+  const hardScore = calcHardSkillScore(
+    hardRatings,
+    approvedJD.skillGroups || [],
+    assessmentCriteria.hardSkills || []
+  );
   const softScore = calcCategoryScore(softRatings, softTotalWeight);
 
   // Weighted combination: hard=70%, soft=30%
@@ -53,6 +58,92 @@ function calculateScore(hardRatings, softRatings) {
     weightedScore,
     classification: classify(weightedScore),
   };
+}
+
+/**
+ * Calculate hard-skill score while folding skill groups into a single scored unit.
+ */
+function calcHardSkillScore(hardRatings, skillGroups, hardCriteria) {
+  if ((!hardRatings || hardRatings.length === 0) && (!hardCriteria || hardCriteria.length === 0)) return 0;
+
+  const normalizedRatings = hardRatings.map((rating) => ({
+    ...rating,
+    skill: String(rating.skill || '').trim(),
+    rating: Math.min(5, Math.max(1, Number(rating.rating) || 1)),
+    weight: Number(rating.weight) || 0,
+  }));
+
+  const ratingBySkill = new Map(normalizedRatings.map((rating) => [normalizeSkillName(rating.skill), rating]));
+  const criteriaItems = uniqueCriteria(hardCriteria);
+  const criteriaBySkill = new Map(
+    criteriaItems.map((item) => [normalizeSkillName(item.skill), {
+      skill: String(item.skill || '').trim(),
+      rating: Math.min(5, Math.max(1, Number(ratingBySkill.get(normalizeSkillName(item.skill))?.rating) || 1)),
+      weight: Number(item.weight) || 0,
+    }])
+  );
+
+  const groupedSkills = new Set();
+  let earned = 0;
+  let totalWeight = 0;
+
+  (Array.isArray(skillGroups) ? skillGroups : []).forEach((group) => {
+    const groupSkills = uniqueSkills(group?.skills);
+    if (groupSkills.length === 0) return;
+
+    const groupRatings = groupSkills.map((skill) => criteriaBySkill.get(normalizeSkillName(skill))).filter(Boolean);
+    const groupWeight = groupRatings.reduce((sum, rating) => sum + rating.weight, 0);
+    if (groupWeight === 0) return;
+
+    groupSkills.forEach((skill) => groupedSkills.add(normalizeSkillName(skill)));
+    totalWeight += groupWeight;
+
+    const satisfied = group?.rule === 'ANY_ONE'
+      ? groupRatings.some((rating) => rating.rating > 1)
+      : groupRatings.length === groupSkills.length && groupRatings.every((rating) => rating.rating > 1);
+
+    earned += satisfied ? 5 * groupWeight : 0;
+  });
+
+  const remainingRatings = criteriaItems
+    .filter((item) => !groupedSkills.has(normalizeSkillName(item.skill)))
+    .map((item) => ({
+      skill: String(item.skill || '').trim(),
+      rating: Math.min(5, Math.max(1, Number(ratingBySkill.get(normalizeSkillName(item.skill))?.rating) || 1)),
+      weight: Number(item.weight) || 0,
+    }));
+
+  const remainingWeight = remainingRatings.reduce((sum, rating) => sum + rating.weight, 0);
+  const remainingEarned = remainingRatings.reduce(
+    (sum, rating) => sum + rating.rating * rating.weight,
+    0
+  );
+
+  totalWeight += remainingWeight;
+  earned += remainingEarned;
+
+  if (totalWeight === 0) return 0;
+  return Math.round((earned / (5 * totalWeight)) * 100);
+}
+
+function normalizeSkillName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function uniqueSkills(skills) {
+  return [...new Set((Array.isArray(skills) ? skills : [])
+    .map((skill) => String(skill || '').trim())
+    .filter(Boolean))];
+}
+
+function uniqueCriteria(criteria) {
+  const seen = new Set();
+  return (Array.isArray(criteria) ? criteria : []).filter((item) => {
+    const key = normalizeSkillName(item?.skill);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**

@@ -48,7 +48,7 @@ const assessCandidates = asyncHandler(async (req, res) => {
       );
 
       // Backend scoring — no AI involvement
-      const scoring = calculateScore(hardRatings, softRatings);
+      const scoring = calculateScore(hardRatings, softRatings, jd.extracted || {}, jd.assessmentCriteria || {});
       const eligibility = runEligibilityChecks(
         aiResult.eligibilityChecks || {},
         jd.extracted || {}

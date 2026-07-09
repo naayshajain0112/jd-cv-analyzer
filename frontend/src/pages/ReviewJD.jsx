@@ -14,23 +14,46 @@ const parseExperienceMinimum = (experience) => {
   return match ? match[1] : '';
 };
 
-const createSkillGroup = () => ({
-  id: `skill-group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  groupName: '',
-  skills: [],
-  rule: 'ALL',
-});
+const normalizeSkill = (skill) => String(skill || '').trim();
+
+const uniqueSkills = (skills) => [...new Set((Array.isArray(skills) ? skills : [])
+  .map(normalizeSkill)
+  .filter(Boolean))];
 
 const normalizeSkillGroups = (groups) => {
   if (!Array.isArray(groups)) return [];
 
   return groups.map((group, index) => ({
     id: group?.id || `skill-group-${index + 1}-${Math.random().toString(36).slice(2, 7)}`,
-    groupName: group?.groupName || '',
-    skills: Array.isArray(group?.skills) ? [...new Set(group.skills.filter(Boolean))] : [],
+    groupName: String(group?.groupName || '').trim(),
+    skills: uniqueSkills(group?.skills),
     rule: group?.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
   }));
 };
+
+const normalizeHardSkills = (skills, groups = []) => {
+  const groupedSkills = new Set((Array.isArray(groups) ? groups : []).flatMap((group) => group.skills || []).map(normalizeSkill));
+
+  return uniqueSkills(skills).filter((skill) => !groupedSkills.has(skill));
+};
+
+const createSkillGroup = () => ({
+  id: `skill-group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  groupName: '',
+  skills: [],
+  rule: 'ANY_ONE',
+});
+
+const removeSkillFromGroups = (groups, skill, excludeGroupId) => groups.map((group) => {
+  if (excludeGroupId && group.id === excludeGroupId) return group;
+  return {
+    ...group,
+    skills: group.skills.filter((groupSkill) => groupSkill !== skill),
+  };
+});
+
+const skillExistsInGroups = (groups, skill) => (Array.isArray(groups) ? groups : [])
+  .some((group) => group.skills.includes(skill));
 
 const ChipList = ({ items, onRemove, color }) => (
     <div className="chip-list">
@@ -43,7 +66,7 @@ const ChipList = ({ items, onRemove, color }) => (
     </div>
   );
 
-  const AddRow = ({ value, onChange, onAdd, onKeyDown, placeholder }) => (
+  const AddRow = ({ value, onChange, onAdd, placeholder }) => (
     <div className="review-jd__add-skill">
       <input
         className="form-input"
@@ -62,14 +85,15 @@ export default function ReviewJD() {
   const rawText   = state?.rawText || '';
 
   const initial = state?.extracted || {};
+  const initialSkillGroups = normalizeSkillGroups(initial.skillGroups);
 
   const [jobTitle, setJobTitle]             = useState(initial.jobTitle || '');
   const [experienceMinimum, setExperienceMinimum] = useState(parseExperienceMinimum(initial.experience));
   const [education, setEducation]           = useState(initial.education || '');
   const [location, setLocation]             = useState(initial.location || '');
   const [workingModel, setWorkingModel]     = useState(initial.workingModel || '');
-  const [hardSkills, setHardSkills]         = useState(initial.hardSkills || []);
-  const [skillGroups, setSkillGroups]       = useState(normalizeSkillGroups(initial.skillGroups));
+  const [hardSkills, setHardSkills]         = useState(() => normalizeHardSkills(initial.hardSkills, initialSkillGroups));
+  const [skillGroups, setSkillGroups]       = useState(initialSkillGroups);
   const [softSkills, setSoftSkills]         = useState(initial.softSkills || []);
   const [mandatory, setMandatory]           = useState(initial.mandatoryRequirements || []);
   const [rejectConds, setRejectConds]       = useState(initial.rejectConditions || []);
@@ -99,6 +123,16 @@ export default function ReviewJD() {
   };
   const removeFromList = (list, setList, item) => setList(list.filter((x) => x !== item));
 
+  const addHardSkill = () => {
+    const selectedSkill = normalizeSkill(newHard);
+    if (!selectedSkill) return;
+
+    setSkillGroups((prev) => removeSkillFromGroups(prev, selectedSkill));
+
+    setHardSkills((prev) => (prev.includes(selectedSkill) ? prev : [...prev, selectedSkill]));
+    setNewHard('');
+  };
+
   const addSkillGroup = () => {
     const group = createSkillGroup();
     setSkillGroups((prev) => [...prev, group]);
@@ -110,7 +144,20 @@ export default function ReviewJD() {
   };
 
   const removeSkillGroup = (groupId) => {
-    setSkillGroups((prev) => prev.filter((group) => group.id !== groupId));
+    setSkillGroups((prev) => {
+      const removedGroup = prev.find((group) => group.id === groupId);
+      const nextGroups = prev.filter((group) => group.id !== groupId);
+
+      if (removedGroup) {
+        const remainingGroupedSkills = new Set(nextGroups.flatMap((group) => group.skills || []).map(normalizeSkill));
+        setHardSkills((currentHardSkills) => uniqueSkills([
+          ...currentHardSkills,
+          ...removedGroup.skills.filter((skill) => !remainingGroupedSkills.has(skill)),
+        ]));
+      }
+
+      return nextGroups;
+    });
     setNewGroupSkills((prev) => {
       const next = { ...prev };
       delete next[groupId];
@@ -119,22 +166,43 @@ export default function ReviewJD() {
   };
 
   const addSkillToGroup = (groupId) => {
-    const selectedSkill = (newGroupSkills[groupId] || '').trim();
+    const selectedSkill = normalizeSkill(newGroupSkills[groupId]);
     if (!selectedSkill) return;
 
     setSkillGroups((prev) => prev.map((group) => {
-      if (group.id !== groupId || group.skills.includes(selectedSkill)) return group;
-      return { ...group, skills: [...group.skills, selectedSkill] };
+      const nextGroup = {
+        ...group,
+        skills: group.skills.filter((skill) => skill !== selectedSkill),
+      };
+
+      if (group.id === groupId && !nextGroup.skills.includes(selectedSkill)) {
+        nextGroup.skills = [...nextGroup.skills, selectedSkill];
+      }
+
+      return nextGroup;
     }));
+
+    setHardSkills((prev) => prev.filter((skill) => skill !== selectedSkill));
 
     setNewGroupSkills((prev) => ({ ...prev, [groupId]: '' }));
   };
 
   const removeSkillFromGroup = (groupId, skill) => {
-    setSkillGroups((prev) => prev.map((group) => {
-      if (group.id !== groupId) return group;
-      return { ...group, skills: group.skills.filter((item) => item !== skill) };
-    }));
+    const normalizedSkill = normalizeSkill(skill);
+    setSkillGroups((prev) => {
+      const nextGroups = prev.map((group) => {
+        if (group.id !== groupId) return group;
+        return { ...group, skills: group.skills.filter((item) => item !== normalizedSkill) };
+      });
+
+      if (!skillExistsInGroups(nextGroups, normalizedSkill)) {
+        setHardSkills((currentHardSkills) => (currentHardSkills.includes(normalizedSkill)
+          ? currentHardSkills
+          : [...currentHardSkills, normalizedSkill]));
+      }
+
+      return nextGroups;
+    });
   };
 
   const buildExperience = () => ({
@@ -142,11 +210,13 @@ export default function ReviewJD() {
     allowHigherExperience: true,
   });
 
+  const buildHardSkills = () => normalizeHardSkills(hardSkills, skillGroups);
+
   const buildSkillGroups = () => skillGroups
     .map((group) => ({
       ...group,
       groupName: group.groupName.trim(),
-      skills: group.skills.filter(Boolean),
+      skills: uniqueSkills(group.skills),
       rule: group.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
     }))
     .filter((group) => group.groupName || group.skills.length > 0);
@@ -160,7 +230,7 @@ export default function ReviewJD() {
         education,
         location,
         workingModel,
-        hardSkills,
+        hardSkills: buildHardSkills(),
         softSkills,
         mandatoryRequirements: mandatory,
         rejectConditions: rejectConds,
@@ -252,19 +322,19 @@ export default function ReviewJD() {
             <h2 className="review-jd__section-title">🛠️ Hard Skills (Technical)</h2>
             <ChipList items={hardSkills} onRemove={(s) => removeFromList(hardSkills, setHardSkills, s)} />
             <AddRow value={newHard} onChange={setNewHard} placeholder="Add a technical skill…"
-              onAdd={() => addToList(hardSkills, setHardSkills, newHard, setNewHard)} />
+              onAdd={addHardSkill} />
           </div>
 
           {/* Skill Groups */}
           <div className="review-jd__section">
             <div className="review-jd__section-header">
-              <h2 className="review-jd__section-title">🧩 Skill Groups (Optional)</h2>
-              <button className="btn btn-secondary" onClick={addSkillGroup}>+ Add Skill Group</button>
+              <h2 className="review-jd__section-title">🧩 Detected Skill Groups</h2>
+              <button className="btn btn-secondary" onClick={addSkillGroup}>+ Create Skill Group</button>
             </div>
-            <p className="review-jd__helper-text">Use skill groups when a candidate only needs one of several equivalent skills.</p>
+            <p className="review-jd__helper-text">Gemini detects equivalent skills in the JD. You can edit the groups below before continuing.</p>
 
             {skillGroups.length === 0 ? (
-              <p className="review-jd__empty-state">No skill groups added yet.</p>
+              <p className="review-jd__empty-state">No skill groups were detected in this JD.</p>
             ) : skillGroups.map((group) => (
               <div className="review-jd__skill-group" key={group.id}>
                 <div className="review-jd__skill-group-top">

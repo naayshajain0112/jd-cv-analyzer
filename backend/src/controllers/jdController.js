@@ -9,6 +9,23 @@ const logger = require('../utils/logger');
 
 function normalizeExtractedJD(extracted = {}) {
   const minimum = parseExperienceMinimum(extracted.experience);
+  const normalizedSkillGroups = Array.isArray(extracted.skillGroups)
+    ? extracted.skillGroups.map((group, index) => ({
+      id: group?.id || `skill-group-${index + 1}`,
+      groupName: String(group?.groupName || '').trim(),
+      skills: Array.isArray(group?.skills)
+        ? [...new Set(group.skills.map((skill) => String(skill || '').trim()).filter(Boolean))]
+        : [],
+      rule: group?.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
+    }))
+    : [];
+
+  const hardSkills = [...new Set([
+    ...(Array.isArray(extracted.hardSkills)
+      ? extracted.hardSkills.map((skill) => String(skill || '').trim()).filter(Boolean)
+      : []),
+    ...normalizedSkillGroups.flatMap((group) => group.skills),
+  ])];
 
   return {
     ...extracted,
@@ -16,15 +33,8 @@ function normalizeExtractedJD(extracted = {}) {
       minimum,
       allowHigherExperience: true,
     },
-    hardSkills: Array.isArray(extracted.hardSkills) ? extracted.hardSkills : [],
-    skillGroups: Array.isArray(extracted.skillGroups)
-      ? extracted.skillGroups.map((group, index) => ({
-        id: group?.id || `skill-group-${index + 1}`,
-        groupName: group?.groupName || '',
-        skills: Array.isArray(group?.skills) ? [...new Set(group.skills.filter(Boolean))] : [],
-        rule: group?.rule === 'ANY_ONE' ? 'ANY_ONE' : 'ALL',
-      }))
-      : [],
+    hardSkills,
+    skillGroups: normalizedSkillGroups,
     softSkills: Array.isArray(extracted.softSkills) ? extracted.softSkills : [],
     mandatoryRequirements: Array.isArray(extracted.mandatoryRequirements) ? extracted.mandatoryRequirements : [],
     rejectConditions: Array.isArray(extracted.rejectConditions) ? extracted.rejectConditions : [],
