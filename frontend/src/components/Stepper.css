@@ -1,0 +1,15 @@
+/* ===== Stepper override / extra ===== */
+.stepper {
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-sm);
+}
+
+.stepper__fragment {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.stepper__fragment:first-child {
+  flex: 0 0 auto;
+}
