@@ -147,7 +147,7 @@ function CandidateCard({ assessment, jd, onOverrideSaved }) {
 
   return (
     <div className="glass-card report__candidate">
-      {/* Header */}
+      {/* Header with score */}
       <div className="report__candidate-header">
         <div>
           <h2 className="report__candidate-name">{assessment.candidateName}</h2>
@@ -157,6 +157,7 @@ function CandidateCard({ assessment, jd, onOverrideSaved }) {
         <ScoreRing score={finalScore} />
       </div>
 
+      {/* Status badges */}
       <div className="report__candidate-meta">
         <span className={`badge ${verdictClass(finalVerdict)}`}>{finalVerdict}</span>
         <span className={`badge ${eligibility.overallEligible ? 'badge-success' : 'badge-danger'}`}>
@@ -186,7 +187,7 @@ function CandidateCard({ assessment, jd, onOverrideSaved }) {
         ))}
       </div>
 
-      {/* Gaps */}
+      {/* Gaps and Weak skills */}
       {gaps.length > 0 && (
         <div className="report__skills-group">
           <h3 className="report__skills-title report__skills-title--missing">❌ Missing Skills</h3>

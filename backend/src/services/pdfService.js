@@ -62,7 +62,6 @@ async function generateReportPDF(assessment, jd) {
 
     sectionHeader(doc, 'Candidate Summary');
     keyValueGrid(doc, [
-      ['Candidate', candidateName],
       ['Role', jobTitle],
       ['Resume File', cleanText(assessment.resumeFileName) || 'Not available'],
       ['Overall Score', `${finalScore}/100`],
@@ -176,15 +175,9 @@ function drawHeader(doc, candidateName, jobTitle, generatedOn, accentColor) {
   const startY = 0;
   doc.rect(0, startY, doc.page.width, 112).fill(colors.navy);
   doc.fillColor(colors.white).font('Helvetica-Bold').fontSize(20)
-    .text('CV Assessment Report', PAGE.margin, 30, { width: contentWidth(doc) - 130 });
+    .text('CV Assessment Report', PAGE.margin, 30, { width: contentWidth(doc) });
   doc.fillColor('#CBD5E1').font('Helvetica').fontSize(9)
     .text(`Generated: ${generatedOn}`, PAGE.margin, 58);
-
-  const badgeWidth = 126;
-  doc.roundedRect(doc.page.width - PAGE.margin - badgeWidth, 32, badgeWidth, 42, 4)
-    .fill(accentColor);
-  doc.fillColor(colors.white).font('Helvetica-Bold').fontSize(18)
-    .text('ATS', doc.page.width - PAGE.margin - badgeWidth, 43, { width: badgeWidth, align: 'center' });
 
   doc.fillColor(colors.text).font('Helvetica-Bold').fontSize(16)
     .text(candidateName, PAGE.margin, 122, { width: contentWidth(doc) });
@@ -270,14 +263,14 @@ function roleComparisonTable(doc, assessment, jd) {
   const details = eligibility.details || {};
   const extracted = jd?.extracted || {};
   const rows = [
-    ['Experience', formatExperienceRequirement(extracted.experience), cleanText(details.experienceYears) || boolLabel(eligibility.experienceMet), statusLabel(eligibility.experienceMet)],
-    ['Education', cleanText(extracted.education) || 'Not specified', cleanText(details.educationFound) || boolLabel(eligibility.educationMet), statusLabel(eligibility.educationMet)],
-    ['Location', cleanText(extracted.location) || 'Not specified', cleanText(details.locationFound) || boolLabel(eligibility.locationMet), statusLabel(eligibility.locationMet)],
-    ['Mandatory Requirements', listText(extracted.mandatoryRequirements), requirementsEvidence(details.mandatoryCheckResults), statusLabel(eligibility.mandatoryMet)],
-    ['Reject Conditions', listText(extracted.rejectConditions), rejectEvidence(details.rejectFlagResults), statusLabel(eligibility.noRejectFlags)],
+    ['Experience', formatExperienceRequirement(extracted.experience), cleanText(details.experienceYears) || '-', statusLabel(eligibility.experienceMet)],
+    ['Education', cleanText(extracted.education) || '-', cleanText(details.educationFound) || '-', statusLabel(eligibility.educationMet)],
+    ['Location', cleanText(extracted.location) || '-', cleanText(details.locationFound) || '-', statusLabel(eligibility.locationMet)],
+    ['Mandatory Requirements', listText(extracted.mandatoryRequirements) || '-', requirementsEvidence(details.mandatoryCheckResults), statusLabel(eligibility.mandatoryMet)],
+    ['Reject Conditions', listText(extracted.rejectConditions) || '-', rejectEvidence(details.rejectFlagResults), statusLabel(eligibility.noRejectFlags)],
   ];
 
-  table(doc, ['Area', 'Job Requirement', 'Candidate Evidence', 'Status'], rows, [0.18, 0.32, 0.34, 0.16]);
+  table(doc, ['Area', 'Job Requirement', 'Candidate Evidence', 'Status'], rows, [0.18, 0.30, 0.36, 0.16]);
 }
 
 function formatExperienceRequirement(experience) {
@@ -292,10 +285,14 @@ function formatExperienceRequirement(experience) {
 
 function eligibilityTable(doc, eligibility = {}) {
   const details = eligibility.details || {};
+  const experienceEvidence = cleanText(details.experienceYears) || (eligibility.experienceMet ? '-' : 'No evidence found');
+  const educationEvidence = cleanText(details.educationFound) || (eligibility.educationMet ? '-' : 'No evidence found');
+  const locationEvidence = cleanText(details.locationFound) || (eligibility.locationMet ? '-' : 'No evidence found');
+  
   const rows = [
-    ['Experience', statusLabel(eligibility.experienceMet), cleanText(details.experienceYears) || 'No extracted evidence'],
-    ['Education', statusLabel(eligibility.educationMet), cleanText(details.educationFound) || 'No extracted evidence'],
-    ['Location', statusLabel(eligibility.locationMet), cleanText(details.locationFound) || 'No extracted evidence'],
+    ['Experience', statusLabel(eligibility.experienceMet), experienceEvidence],
+    ['Education', statusLabel(eligibility.educationMet), educationEvidence],
+    ['Location', statusLabel(eligibility.locationMet), locationEvidence],
     ['Mandatory Requirements', statusLabel(eligibility.mandatoryMet), requirementsEvidence(details.mandatoryCheckResults)],
     ['Reject Flags', statusLabel(eligibility.noRejectFlags), rejectEvidence(details.rejectFlagResults)],
   ];
@@ -315,12 +312,15 @@ function skillsTable(doc, ratings) {
     return;
   }
 
-  const rows = ratings.map((rating) => [
-    cleanText(rating.skill) || 'Skill',
-    `${numeric(rating.rating, 0)}/5`,
-    String(numeric(rating.weight, 0)),
-    cleanText(rating.evidence || rating.reasoning) || 'No evidence provided',
-  ]);
+  const rows = ratings.map((rating) => {
+    const evidence = cleanText(rating.evidence) || cleanText(rating.reasoning) || '-';
+    return [
+      cleanText(rating.skill) || 'Skill',
+      `${numeric(rating.rating, 0)}/5`,
+      String(numeric(rating.weight, 0)),
+      evidence,
+    ];
+  });
 
   table(doc, ['Skill', 'Rating', 'Weight', 'Evidence / Reasoning'], rows, [0.25, 0.12, 0.12, 0.51], {
     colorizeStatusColumn: 1,

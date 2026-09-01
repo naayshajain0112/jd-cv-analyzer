@@ -3,7 +3,7 @@ const { extractText } = require('../services/extractionService');
 const { callGemini } = require('../services/geminiService');
 const { resolveCandidateName, extractResumeNameFromText, extractLinkedInNameFromText } = require('../services/pdfService');
 const { cvAssessmentPrompt, interviewQuestionsPrompt } = require('../prompts/cvPrompts');
-const { calculateScore, runEligibilityChecks, identifyGaps } = require('../services/scoringService');
+const { calculateScore, runEligibilityChecks, identifyGaps, deduplicateRatings } = require('../services/scoringService');
 const { JD, Assessment } = require('../models');
 const { asyncHandler, createError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
@@ -70,6 +70,10 @@ const assessCandidates = asyncHandler(async (req, res) => {
         resumeText: cvText,
       });
 
+      // Normalize/deduplicate skills to avoid redundant scoring and display
+      const normalizedHardRatings = deduplicateRatings(hardRatings);
+      const normalizedSoftRatings = deduplicateRatings(softRatings);
+
       const assessment = await Assessment.create({
         jdId,
         candidateName,
@@ -77,8 +81,8 @@ const assessCandidates = asyncHandler(async (req, res) => {
         linkedinName,
         resumeFileName: file.originalname,
         resumeText: cvText.substring(0, 5000),
-        hardSkillRatings: hardRatings,
-        softSkillRatings: softRatings,
+        hardSkillRatings: normalizedHardRatings,
+        softSkillRatings: normalizedSoftRatings,
         eligibility,
         scoring,
         interviewQuestions: iqResult.questions || [],

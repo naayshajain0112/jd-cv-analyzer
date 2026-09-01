@@ -8,7 +8,7 @@ function getModel() {
   if (!model) {
     if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is not set');
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
   }
   return model;
 }
@@ -27,17 +27,19 @@ async function callGemini(prompt) {
 
   logger.info(`Gemini response received (${text.length} chars)`);
 
-  // Strip markdown fences if present
+  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
   const cleaned = text
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```\s*$/i, '')
+    .replace(/^```(?:json)?\s*\n?/i, '')
+    .replace(/\n?```\s*$/i, '')
     .trim();
 
   try {
     return JSON.parse(cleaned);
   } catch (e) {
-    logger.error('Failed to parse Gemini JSON response:', cleaned.substring(0, 500));
+    logger.error('Failed to parse Gemini JSON response');
+    logger.error('Raw Gemini response:', text);
+    logger.error('Cleaned response:', cleaned);
+    logger.error('Parse error:', e.message);
     throw new Error('Gemini returned invalid JSON. Please try again.');
   }
 }
