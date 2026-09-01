@@ -258,14 +258,32 @@ function scoreBar(doc, label, score, barColor) {
   doc.y = y + 24;
 }
 
+/**
+ * Generate meaningful evidence text based on requirement status
+ */
+function getEvidenceText(evidence, isMet, category) {
+  // If evidence text exists, use it
+  if (evidence) return evidence;
+  
+  // Return meaningful message based on status
+  if (isMet === true) {
+    if (category === 'experience') return 'Experience requirement satisfied';
+    if (category === 'education') return 'Education requirement verified';
+    if (category === 'location') return 'Location requirement satisfied';
+    return 'Requirement verified based on CV analysis';
+  }
+  
+  return 'No direct evidence found in CV';
+}
+
 function roleComparisonTable(doc, assessment, jd) {
   const eligibility = assessment.eligibility || {};
   const details = eligibility.details || {};
   const extracted = jd?.extracted || {};
   const rows = [
-    ['Experience', formatExperienceRequirement(extracted.experience), cleanText(details.experienceYears) || '-', statusLabel(eligibility.experienceMet)],
-    ['Education', cleanText(extracted.education) || '-', cleanText(details.educationFound) || '-', statusLabel(eligibility.educationMet)],
-    ['Location', cleanText(extracted.location) || '-', cleanText(details.locationFound) || '-', statusLabel(eligibility.locationMet)],
+    ['Experience', formatExperienceRequirement(extracted.experience), getEvidenceText(cleanText(details.experienceYears), eligibility.experienceMet, 'experience'), statusLabel(eligibility.experienceMet)],
+    ['Education', cleanText(extracted.education) || '-', getEvidenceText(cleanText(details.educationFound), eligibility.educationMet, 'education'), statusLabel(eligibility.educationMet)],
+    ['Location', cleanText(extracted.location) || '-', getEvidenceText(cleanText(details.locationFound), eligibility.locationMet, 'location'), statusLabel(eligibility.locationMet)],
     ['Mandatory Requirements', listText(extracted.mandatoryRequirements) || '-', requirementsEvidence(details.mandatoryCheckResults), statusLabel(eligibility.mandatoryMet)],
     ['Reject Conditions', listText(extracted.rejectConditions) || '-', rejectEvidence(details.rejectFlagResults), statusLabel(eligibility.noRejectFlags)],
   ];
