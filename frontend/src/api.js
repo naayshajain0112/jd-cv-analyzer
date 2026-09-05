@@ -3,14 +3,16 @@
  * In dev: Vite proxies /api → localhost:5000
  * In prod: set VITE_API_URL to your Render backend (e.g. https://xyz.onrender.com/api)
  */
-const BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
 
 async function request(method, path, body, isFormData = false) {
   const headers = isFormData ? {} : { 'Content-Type': 'application/json' };
   const init = { method, headers };
   if (body) init.body = isFormData ? body : JSON.stringify(body);
 
-  const res = await fetch(`${BASE}${path}`, init);
+  const res = await fetch(`${API_BASE}${path}`, init);
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
@@ -63,5 +65,5 @@ export async function overrideAssessment(id, data) {
 }
 
 export function getReportPDFUrl(assessmentId) {
-  return `${BASE}/report/${assessmentId}/pdf`;
+  return `${API_BASE}/report/${assessmentId}/pdf`;
 }
