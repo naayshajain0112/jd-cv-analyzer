@@ -355,6 +355,7 @@ export default function Report() {
         <PageHeader
           step="Step 4"
           title="Candidate Assessment Report"
+          logoClassName="page-header__logo--report"
           subtitle={(
             <>
               AI-powered analysis of <strong>{assessments.length} candidate{assessments.length > 1 ? 's' : ''}</strong>{' '}

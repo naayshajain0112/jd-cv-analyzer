@@ -22,9 +22,13 @@
   padding: 0;
 }
 .page-header__logo {
-  width: 80px;
-  height: 50px;
+  width: 150px;
+  height: 94px;
   object-fit: contain;
+}
+.page-header__logo--report {
+  width: 180px;
+  height: 113px;
 }
 
 .page-header__content {

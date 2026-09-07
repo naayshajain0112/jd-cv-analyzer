@@ -1,7 +1,7 @@
 import logo from '../assets/logo.png';
 import './PageHeader.css';
 
-export default function PageHeader({ step, title, subtitle }) {
+export default function PageHeader({ step, title, subtitle, logoClassName = '' }) {
   return (
     <div className="section-header page-header">
       <div className="page-header__content">
@@ -9,7 +9,7 @@ export default function PageHeader({ step, title, subtitle }) {
         <h1 className="section-header__title">{title}</h1>
         <p className="section-header__subtitle">{subtitle}</p>
       </div>
-      <img className="page-header__logo" src={logo} alt="Company logo" />
+      <img className={`page-header__logo ${logoClassName}`} src={logo} alt="Company logo" />
     </div>
   );
 }
