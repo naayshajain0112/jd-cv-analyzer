@@ -410,7 +410,10 @@ export default function Report() {
         </div>
 
         <div className="report__actions">
-          <button className="btn btn-ghost" onClick={() => navigate('/upload-resume')}>← Back</button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => navigate('/upload-resume', { state: { jdId } })}
+          >Assess Another Candidate on Same JD</button>
           <button id="start-over-btn" className="btn btn-secondary" onClick={() => navigate('/')}>↻ Start Over</button>
         </div>
       </div>

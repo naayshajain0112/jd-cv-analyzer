@@ -140,7 +140,11 @@ export default function UploadResume() {
           )}
 
           <div className="upload-resume__actions">
-            <button className="btn btn-ghost" onClick={() => navigate('/review')} disabled={loading}>← Back</button>
+            <button
+              className="btn btn-ghost"
+              onClick={() => navigate('/review', { state: { jdId } })}
+              disabled={loading}
+            >← Back</button>
             <button
               id="analyze-btn"
               className="btn btn-primary"

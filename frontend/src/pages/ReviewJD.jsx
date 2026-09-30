@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { approveJD, generateCriteria } from '../api';
+import { approveJD, generateCriteria, getJD } from '../api';
 import PageHeader from '../components/PageHeader';
 import './ReviewJD.css';
 
@@ -106,6 +106,30 @@ export default function ReviewJD() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+
+  useEffect(() => {
+    if (!jdId || state?.extracted) return;
+
+    let active = true;
+    getJD(jdId)
+      .then((result) => {
+        if (!active) return;
+        const saved = result.jd;
+        navigate('/review', {
+          replace: true,
+          state: {
+            jdId: saved._id,
+            extracted: saved.extracted,
+            rawText: saved.rawText,
+          },
+        });
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Failed to load the saved JD.');
+      });
+
+    return () => { active = false; };
+  }, [jdId, navigate, state?.extracted]);
 
   if (!jdId) {
     return (
